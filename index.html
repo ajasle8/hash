@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SHA-1 Password Generator & Cracker</title>
+    <script>
+        async function sha1(str) {
+            const buffer = new TextEncoder().encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function generateHash() {
+            const password = document.getElementById("password").value;
+            const hash = await sha1(password);
+            document.getElementById("hashOutput").innerText = "SHA-1 Hash: " + hash;
+        }
+
+        async function crackPassword() {
+            const hashToCrack = document.getElementById("hashToCrack").value;
+            const fileInput = document.getElementById("passwordFile");
+            
+            if (fileInput.files.length === 0) {
+                document.getElementById("crackOutput").innerText = "Please select a passwords.txt file";
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async function(event) {
+                const passwords = event.target.result.split("\n");
+                for (let pass of passwords) {
+                    pass = pass.trim();
+                    if (pass && await sha1(pass) === hashToCrack) {
+                        document.getElementById("crackOutput").innerText = "Password Found: " + pass;
+                        return;
+                    }
+                }
+                document.getElementById("crackOutput").innerText = "Password Not Found in List";
+            };
+            
+            reader.readAsText(file);
+        }
+    </script>
+</head>
+<body>
+    <h2>SHA-1 Password Generator</h2>
+    <input type="text" id="password" placeholder="Enter password">
+    <button onclick="generateHash()">Generate SHA-1 Hash</button>
+    <p id="hashOutput"></p>
+    
+    <h2>SHA-1 Password Cracker</h2>
+    <input type="text" id="hashToCrack" placeholder="Enter SHA-1 Hash">
+    <input type="file" id="passwordFile" accept=".txt">
+    <button onclick="crackPassword()">Crack Password</button>
+    <p id="crackOutput"></p>
+</body>
+</html>
