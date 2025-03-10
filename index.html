@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SHA-1 Password Generator & Cracker</title>
+    <script>
+        async function sha1(str) {
+            const buffer = new TextEncoder().encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function generateHash() {
+            const password = document.getElementById("password").value;
+            const hash = await sha1(password);
+            document.getElementById("hashOutput").innerText = "SHA-1 Hash: " + hash;
+        }
+
+        async function crackPassword() {
+            const hashToCrack = document.getElementById("hashToCrack").value;
+            
+            try {
+                const response = await fetch('passwords.txt');
+                if (!response.ok) throw new Error('Failed to load passwords.txt');
+                
+                const text = await response.text();
+                const passwords = text.split("\n").map(p => p.trim());
+                
+                for (let pass of passwords) {
+                    if (pass && await sha1(pass) === hashToCrack) {
+                        document.getElementById("crackOutput").innerText = "Password Found: " + pass;
+                        return;
+                    }
+                }
+                document.getElementById("crackOutput").innerText = "Password Not Found in List";
+            } catch (error) {
+                document.getElementById("crackOutput").innerText = "Error loading passwords.txt";
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>SHA-1 Password Generator</h2>
+    <input type="text" id="password" placeholder="Enter password">
+    <button onclick="generateHash()">Generate SHA-1 Hash</button>
+    <p id="hashOutput"></p>
+    
+    <h2>SHA-1 Password Cracker</h2>
+    <input type="text" id="hashToCrack" placeholder="Enter SHA-1 Hash">
+    <button onclick="crackPassword()">Crack Password</button>
+    <p id="crackOutput"></p>
+</body>
+</html>
